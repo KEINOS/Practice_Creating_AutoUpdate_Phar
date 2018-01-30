@@ -17,9 +17,11 @@ function check_file_exist($path_file)
     echo_head("Checking file existance (${path_file}) ...");
     $result = file_exists($path_file);
 
-    return ($result)
+    ($result)
         ? echo_tail('... OK.')
         : echo_tail('... Error.[File not found]');
+
+    return $result;
 }
 
 function create_dir_bin()
@@ -64,19 +66,47 @@ function echo_br($string)
     echo $string . PHP_EOL;
 }
 
+function echo_h1($string, $return = false)
+{
+    $hr  = echo_hr('=', true);
+
+    $result  = $hr . $string . PHP_EOL . $hr;
+
+    if($return){
+        return $result;        
+    }else{
+        echo $result;
+    }
+}
+
+function echo_h2($string, $return = false)
+{
+    $len = (integer) strlen($string);
+    $hr  = str_repeat('=', $len);
+    $result  = PHP_EOL . $string . PHP_EOL;
+    $result .= $hr . PHP_EOL;
+
+    if($return){
+        return $result;        
+    }else{
+        echo $result;
+    }
+}
+
 function echo_head($string)
 {
     // here record string width
     echo $string;
 }
 
-function echo_hr($return = false)
+function echo_hr($hr_char = '=', $return = false)
 {
-    $hr = '==========================================';
+    $hr = get_hr($hr_char);
+
     if ($return) {
         return $hr;
     } else {
-        echo PHP_EOL . $hr . PHP_EOL;
+        echo $hr . PHP_EOL;
     }
 }
 
@@ -86,19 +116,36 @@ function echo_tail($string)
     echo $string . PHP_EOL;
 }
 
-function echo_title()
-{
-    echo_hr();
-    echo ' Phar archiver';
-    echo_hr();
-}
-
 function fetch_filename_url($url)
 {
     $dirs  = explode('/', parse_url($url)['path']);
     $count = ((integer) count($dirs)) -1;
 
     return $dirs[$count];
+}
+
+function get_hr($hr_char = '=')
+{
+    $width = get_screen_width();
+
+    if ('n/a' == $width) {
+        return '<hr />';
+    } else {
+        return str_repeat($hr_char, $width);
+    }
+}
+
+function get_screen_width()
+{
+    $default_width = 70; //デフォルト幅
+
+    if (! is_cli()) {
+        return 'n/a';
+    }
+
+    $width = trim(`tput cols`);
+
+    return is_numeric($width) ? $width : $default_width;
 }
 
 function initialize_box()
@@ -116,8 +163,8 @@ function initialize_box()
         return true;
     }
 
-    echo_br('[Installing box]');
-    echo_hr();
+    echo_br('Installing box ...');
+    echo_hr('-');
 
     $name_file_installer = fetch_filename_url(URL_BIN_BOX);
     $path_file_installer = PATH_DIR_BIN . $name_file_installer;
@@ -134,19 +181,24 @@ function initialize_box()
         unlink_file($path_file_installer);
     }
 
+    echo_hr('-');
+
     return file_exists($path_bin_box);
 }
 
 function install_bin_box($path_bin_box_installer)
 {
-    echo_head('Checkgin installer ...');
+    echo_head('Checking installer ...');
 
     if (file_exists($path_bin_box_installer)) {
         echo_tail('... Done.[Now Running Installer]');
+        echo_hr('-');
 
         // Include and execute!
         // Noe: It installs to current dir.
         include_once($path_bin_box_installer);
+
+        echo_hr('-');
 
         if (file_exists(DIR_CURRENT . NAME_BIN_BOX)) {
             return DIR_CURRENT . NAME_BIN_BOX;
@@ -156,6 +208,13 @@ function install_bin_box($path_bin_box_installer)
     } else {
         echo_tail('... Error.[File not found]');
     }
+
+    echo_hr('-');
+}
+
+function is_cli()
+{
+    return PHP_SAPI === 'cli' || empty($_SERVER['REMOTE_ADDR']);
 }
 
 function is_phar_readonly()
